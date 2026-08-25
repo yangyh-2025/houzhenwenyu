@@ -45,7 +45,7 @@ def test_happy_path_full_flow(client):
         assert len(recs) == 1
         rec = recs[0]
         assert rec.visit_number == "35"
-        assert rec.rounds == 11
+        assert rec.rounds == 10
         for lb in ["主诉", "病程", "刻下主要症状", "饮食", "睡眠",
                    "二便", "既往病史", "当前用药"]:
             assert lb in rec.summary_text
@@ -115,12 +115,12 @@ def test_failed_round_not_counted(client):
         assert rf.json()["code"] == "AI_PROVIDER_ERROR"
     finally:
         client.app.state.service.provider.understand = orig
-    # 恢复后继续脚本不乱序（失败轮不计入）
+    # 恢复后继续脚本不乱序（失败轮不计入：重试应给出"下一问"而非重复）
     r2 = client.post(f"/api/patient/consultations/{sid}/rounds",
                      json={"audio_b64": _audio()})
     body = r2.json()
     assert body["finished"] is False
-    assert body["text"].startswith("开始不舒服之前")  # 新八类第2问=诱因
+    assert "哪个位置" in body["text"]  # r1已问诱因，重试后应为第3类部位性质
 
 
 
@@ -198,10 +198,7 @@ def test_rate_limit_429(client, monkeypatch):
 def test_safety_hook_e2e(client):
     data = _create(client)
     sid = data["session_id"]
-    # 第1问正常
-    client.post(f"/api/patient/consultations/{sid}/rounds",
-                json={"audio_b64": _audio()})
-    # 第2轮发超短音频触发 mock 安全钩子（step==1）
+    # 第1轮即发极短音频触发 mock 安全钩子（step==1，历史已预置首问）
     from app.core.wav_utils import build_test_wav
     short = base64.b64encode(build_test_wav(0.55)).decode()
     r = client.post(f"/api/patient/consultations/{sid}/rounds",

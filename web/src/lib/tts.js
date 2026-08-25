@@ -252,3 +252,39 @@ export function beepOn() {
 export function beepOff() {
   _playBeepFile('/tts/beep_off.wav')
 }
+
+
+// ===== 快捷语音：按键音/数字核对序列（独立元素，手势内解锁）=====
+var _quickEl = null
+var _seqEl = null
+
+export function speakUrl(url) {
+  // 单条即时播报（打断上一次）
+  try {
+    if (!_quickEl) _quickEl = new Audio()
+    _quickEl.src = url
+    var pr = _quickEl.play()
+    if (pr && pr.catch) pr.catch(function () {})
+  } catch (e) {}
+}
+
+export function speakUrls(urls) {
+  // 顺序播报（前一条 ended 后播下一条）
+  return new Promise(function (resolve) {
+    try {
+      if (!_seqEl) _seqEl = new Audio()
+      var el = _seqEl
+      var i = 0
+      function next() {
+        if (i >= urls.length) { el.removeEventListener('ended', next); resolve(); return }
+        el.src = urls[i]
+        el.load()
+        var pr = el.play()
+        i += 1
+        if (pr && pr.catch) pr.catch(function () { next() })
+        el.addEventListener('ended', next, { once: true })
+      }
+      next()
+    } catch (e) { resolve() }
+  })
+}

@@ -54,7 +54,8 @@
         <p>{{ permNote }}</p>
         <p class="alt">{{ permAlt }}</p>
         <div class="stack">
-          <button type="button" class="btn-big primary" @click="retryMic">我已开启，重新尝试</button>
+          <button v-if="needsSafari" type="button" class="btn-big primary" @click="copyLink">复制链接，去Safari打开</button>
+          <button v-else type="button" class="btn-big primary" @click="retryMic">我已开启，重新尝试</button>
           <button type="button" class="btn-big secondary" @click="backToConsent">返回</button>
         </div>
       </div>
@@ -72,7 +73,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import NumberPad from '@/components/NumberPad.vue'
 import { request, ApiError, binaryAudioRequest } from '@/api/api.js'
-import { tts } from '@/lib/tts.js'
+import { tts, speakUrl, speakUrls } from '@/lib/tts.js'
 import { recorder } from '@/lib/recorder.js'
 import { needsSafariGuide as detectedNeedsSafariGuide } from '@/lib/env.js'
 import { setConsultation } from '@/store/session.js'
@@ -105,6 +106,10 @@ var MAX_LEN = 12
 
 function onKey(k) {
   hint.value = ''
+  // 按键语音反馈（2026-08-24）：数字即读，像计算器
+  if (/^[0-9]$/.test(k)) {
+    speakUrl('/tts/NUM_' + k + '.mp3')
+  }
   if (k === '删除') {
     digits.value = digits.value.slice(0, -1)
     return
@@ -125,6 +130,12 @@ function onConfirm() {
     hint.value = '请先输入您的就诊号'
     return
   }
+  // 核对播报：请核对您的就诊号，您的就诊号是 X X
+  var seq = ['/tts/CONFIRM_PREFIX.mp3']
+  for (var i = 0; i < digits.value.length; i++) {
+    seq.push('/tts/NUM_' + digits.value[i] + '.mp3')
+  }
+  speakUrls(seq)
   mode.value = 'confirm'
 }
 
@@ -184,6 +195,30 @@ function proceedToConsult(visitNumber) {
 }
 
 // Permission overlay retry: warmup re-runs synchronously inside THIS click.
+function copyLink() {
+  var url = location.href
+  var done = function () {
+    permTitle.value = '链接已复制'
+    permNote.value = '请打开Safari，粘贴并打开该链接，即可正常语音问诊'
+    permAlt.value = ''
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done, function () { fallbackCopy(url, done) })
+  } else {
+    fallbackCopy(url, done)
+  }
+}
+
+function fallbackCopy(text, done) {
+  var ta = document.createElement('textarea')
+  ta.value = text
+  document.body.appendChild(ta)
+  ta.select()
+  try { document.execCommand('copy') } catch (e) {}
+  document.body.removeChild(ta)
+  done()
+}
+
 function retryMic() {
   permOverlay.value = false
   var visitNumber = digits.value

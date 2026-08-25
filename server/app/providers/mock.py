@@ -85,12 +85,12 @@ class ScriptedMockProvider(BaseProvider):
             last = messages[-1] if messages else {}
             last_c = str(last.get("content", ""))
             if (last.get("role") == "user" and "第一个问题" in last_c):
-                return SCRIPT[0] + _tag(0)  # 协议 v2.1：开场介绍后的首问
+                return _tag(0) + SCRIPT[0]  # 协议 v2.1：开场介绍后的首问
             if (last.get("role") == "user" and "患者" in last_c):
                 # 两段式：该轮用户消息为转写文本 → 按步进正常出下一问
                 step2 = (len(messages) - 1) // 2
                 if step2 < len(SCRIPT):
-                    return SCRIPT[step2] + _tag(step2)
+                    return _tag(step2) + SCRIPT[step2]
                 return "好的，您的情况我了解得差不多了。" + MARKER + SUMMARY_TEMPLATE
             return "好的，您的情况我了解得差不多了。" + MARKER + SUMMARY_TEMPLATE
         step = (len(messages) - 1) // 2
@@ -98,7 +98,7 @@ class ScriptedMockProvider(BaseProvider):
             # 安全过滤器测试钩子：短音频触发建议类话术
             return "建议您服用香砂养胃丸调理。请问您的睡眠怎么样？"
         if step < len(SCRIPT):
-            return SCRIPT[step] + _tag(step)
+            return _tag(step) + SCRIPT[step]
         return "好的，您的情况我了解得差不多了。" + MARKER + SUMMARY_TEMPLATE
 
     async def synthesize(self, text: str) -> bytes:

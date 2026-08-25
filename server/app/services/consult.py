@@ -58,6 +58,7 @@ class ConsultSession:
     created_at: float
     last_active: float
     expires_at: float = 0.0
+    last_stage: int = 0
     rounds_used: int = 0
     busy: bool = False
     messages: Optional[List[dict]] = None
@@ -188,6 +189,10 @@ class ConsultationService:
         # 2026-08-24 优化：create 不再同步合成开场音频（18s引导语会超时）。
         # 开场白由前端 playStatic(/tts/OPENING.mp3) 或 fixed-phrase-audio 提供。
         sess = self.store.create(vn, ip)
+        # 首问固定话术预置进历史（模型上下文已知第1问问过；AI从患者首答开始介入）
+        if not any(m.get("role") == "assistant" for m in sess.messages):
+            sess.messages.append(
+                {"role": "assistant", "content": get_text("FIRST_QUESTION")})
         if sess.rounds_used > 0:
             # 同号续问（当日有效）：播报最后一问并由 AI 继续引导
             last_q = ""
@@ -362,6 +367,10 @@ class ConsultationService:
                 tts_b64 = await self._phrase_audio("CLOSING")
         else:
             clean_reply, stage = _extract_stage(outcome.reply)
+            if stage is None:
+                # 模型偶发漏标 → 沿用上一已知阶段（防进度条跳变/停滞）
+                stage = getattr(sess, "last_stage", None) or                     min(sess.rounds_used + 1, 8)
+            sess.last_stage = stage
             question_text = filter_question_reply(
                 clean_reply, get_text("FALLBACK_QUESTION"))
             tts_b64 = await self._tts_question(question_text)
@@ -369,23 +378,17 @@ class ConsultationService:
             sess, user_msg, outcome, question_text, tts_b64, stage=stage)
 
     async def ask_first(self, sid: str) -> dict:
-        """协议 v2.1：开场介绍播毕（用户点【明白了】后）由 AI 主动发出第一问。
-
-        不写入会话历史（患者尚未回答）；consume 一次上游调用并合成提问语音。
-        """
+        """协议 v2.3：首问为固定话术，瞬时返回（不再调模型——AI从患者首答开始介入）。"""
         sess = self.store.get(sid)
-        self._count_ai_call("understand-first-ask")
-        instruction = ("现在请正式开始问诊。只输出你要问的第一个问题，"
-                       "不要输出结束标记，也不要输出摘要。")
-        reply = await self.provider.understand(
-            list(sess.messages) + [{"role": "user", "content": instruction}],
-            None)
-        question_text = filter_question_reply(
-            reply, get_text("FALLBACK_QUESTION"))
-        tts_b64 = await self._tts_question(question_text)
-        # 首问记入历史（assistant 侧）：防止患者作答后模型重复第1类问题
-        sess.messages.append(
-            {"role": "assistant", "content": question_text})
+        question_text = get_text("FIRST_QUESTION")
+        # 幂等：历史已含首问则不重复追加
+        if not any(
+                m.get("role") == "assistant"
+                and m.get("content") == question_text
+                for m in sess.messages):
+            sess.messages.append(
+                {"role": "assistant", "content": question_text})
+        tts_b64 = await self._phrase_audio("FIRST_QUESTION")
         return {"text": question_text, "audio_b64": tts_b64, "stage": 1}
 
     async def fixed_phrase_audio(self, sid: str, key: str) -> dict:

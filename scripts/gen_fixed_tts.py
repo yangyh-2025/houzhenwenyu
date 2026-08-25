@@ -17,6 +17,12 @@ os.environ.setdefault("AI_PROVIDER", "mimo")
 from app.core.config import Settings, get_settings  # noqa: E402
 from app.services.fixed_phrases import PHRASES  # noqa: E402
 
+# 按键与确认播报语音（2026-08-24）：数字0-9 + 核对引导语
+EXTRA_PHRASES = {
+    "CONFIRM_PREFIX": "请核对您的就诊号，您的就诊号是",
+    **{f"NUM_{d}": str(d) for d in range(10)},
+}
+
 OUT = os.path.join(os.path.dirname(__file__), "..", "web", "public", "tts")
 
 
@@ -36,7 +42,7 @@ def main() -> int:
 
     async def run():
         n = 0
-        for key, text in PHRASES.items():
+        for key, text in list(PHRASES.items()) + list(EXTRA_PHRASES.items()):
             raw = await provider.synthesize(text)
             path = os.path.join(OUT, f"{key}.{ext}")
             with open(path, "wb") as f:

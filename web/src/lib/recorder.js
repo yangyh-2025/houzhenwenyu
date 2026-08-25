@@ -118,6 +118,14 @@ export class VoiceRecorder {
     opts = opts || {}
     var self = this
     if (!this.stream || !this.ctx) throw new Error('NOT_WARMED')
+    // iOS：流被系统回收时轨道失效 → 抛错由上层引导重新授权
+    var live = this.stream.getTracks().every(function (t) {
+      return t.readyState === 'live'
+    })
+    if (!live) {
+      this.stream = null
+      throw new Error('MIC_STREAM_DEAD')
+    }
     if (this._collecting) this.discard_round()
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(function () {})

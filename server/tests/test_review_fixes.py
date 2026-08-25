@@ -348,7 +348,7 @@ def test_stage_marker_parsed_and_stripped(client):
     r = client.post(f"/api/patient/consultations/{sid}/rounds",
                     json={"audio_b64": _audio()})
     body = r.json()
-    assert body["stage"] == 1  # mock 第1问=主诉类
+    assert body["stage"] == 2  # 首问已预置，第1轮答后=第2类
     assert "【" not in body["text"] and "/8" not in body["text"]
     # ask 路径 stage=1
     d2 = _create(client, vn="91")

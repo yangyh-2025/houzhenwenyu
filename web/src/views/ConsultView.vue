@@ -19,6 +19,15 @@
       <p class="progress-note">大约还剩 {{ remainCount }} 个小问题，问完就好，请放心</p>
     </div>
 
+    <!-- 说话气泡：按住时显示波形与计时 -->
+    <div v-if="holdActive" class="talk-bubble" role="status">
+      <div class="talk-bars">
+        <span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span>
+        <span class="bar b4"></span><span class="bar b5"></span>
+      </div>
+      <span class="talk-time">正在说话 {{ holdSec }}s</span>
+    </div>
+
     <!-- 当前问题文字（语音+文字双通道）-->
     <div v-if="questionText && stateIsOneOf(['playing', 'listening', 'intro-ack'])" class="card q-card">
       <p class="q-label">当前问题</p>
@@ -31,8 +40,8 @@
       <button type="button" class="btn-mid plain" @click="replayIntro">再听一遍</button>
     </div>
 
-    <!-- 聆听：按住说话（微信式）-->
-    <div v-if="state === 'listening'" class="controls stack">
+    <!-- 说话区：播报中可按住打断，聆听中按住说话 -->
+    <div v-if="stateIsOneOf(['playing', 'listening'])" class="controls stack">
       <button
         type="button"
         class="btn-big primary hold-btn"
@@ -43,9 +52,9 @@
         @mousedown.prevent="holdStart"
         @mouseup.prevent="holdEnd"
         @mouseleave="holdActive && holdEnd()"
-      >{{ holdActive ? '松开 结束回答' : '按住 说话' }}</button>
+      >{{ holdActive ? '松开 结束回答' : '按住 说话（可打断播报）' }}</button>
       <p v-if="holdHint" class="hint-bar warn" role="alert">{{ holdHint }}</p>
-      <button type="button" class="btn-mid plain" @click="replayQuestion">再听一遍</button>
+      <button v-if="state === 'listening'" type="button" class="btn-mid plain" @click="replayQuestion">再听一遍</button>
     </div>
 
     <!-- 3次静默：继续/结束 -->
@@ -99,6 +108,9 @@ var STAGE_TOTAL = 8
 var holdActive = ref(false)
 var holdHint = ref('')
 var holdStartTs = 0
+var holdSec = ref(0)
+var holdSecTimer = null
+var barged = false
 var PROCESSING_PHRASES = [
   '正在理解您的病情…',
   '正在查阅中医知识库…',
@@ -197,16 +209,25 @@ function onIntroAck() {
   uploadHint.value = PROCESSING_PHRASES[0]
   startHintRotation()
   var sid = consultSession.sessionId
-  binaryAudioRequest('/api/patient/consultations/' + sid + '/ask', {})
-    .then(function (r) {
-      stopHintRotation()
-      if (r.meta && r.meta.stage) stageNow.value = r.meta.stage
-      playQuestion({ text: (r.meta && r.meta.text) || '', blob: r.blob })
-    }, function () {
-      stopHintRotation()
-      showError('问题没有出来', '请点下面的按钮再试一次')
-      lastAction = { type: 'replay' }
-    })
+  // 首问静态优先（瞬时，2026-08-24 v2.3）：/tts/FIRST_QUESTION.mp3
+  tts.playStatic('FIRST_QUESTION').then(function (ok) {
+    stopHintRotation()
+    if (ok) {
+      stageNow.value = 1
+      playQuestion({ text: '', blob: null, staticKey: 'FIRST_QUESTION' })
+      return
+    }
+    binaryAudioRequest('/api/patient/consultations/' + sid + '/ask', {})
+      .then(function (r) {
+        stopHintRotation()
+        if (r.meta && r.meta.stage) stageNow.value = r.meta.stage
+        playQuestion({ text: (r.meta && r.meta.text) || '', blob: r.blob })
+      }, function () {
+        stopHintRotation()
+        showError('问题没有出来', '请点下面的按钮再试一次')
+        lastAction = { type: 'replay' }
+      })
+  })
 }
 
 function replayIntro() {
@@ -251,6 +272,7 @@ function playQuestion(q, isClosing) {
 }
 
 function onTtsError() {
+  if (barged) { barged = false; return }  // 主动打断造成的停止不算错误
   // 语音播放失败（静音键/省电模式等）：手动重听出口（R4-B）
   lastAction = { type: 'replay' }
   showError('语音没有播出来', '可能是手机静音或省电模式，请调大音量后点下面的按钮再听一遍。')
@@ -264,9 +286,15 @@ function enterListening() {
 }
 
 function holdStart() {
-  if (state.value !== 'listening') return
+  if (!stateIsOneOf(['playing', 'listening'])) return
   holdStartTs = nowMs()
   holdHint.value = ''
+  // barge-in：播报中按下 → 立即停 TTS 转入聆听
+  if (state.value === 'playing') {
+    barged = true
+    try { tts.stop() } catch (e) {}
+    enterListening()
+  }
   try {
     recorder.begin_round({
       onRms: onRms,
@@ -276,6 +304,11 @@ function holdStart() {
     beepOn()
     try { if (navigator.vibrate) navigator.vibrate(30) } catch (e) {}
     uploadHint.value = ''
+    holdSec.value = 0
+    if (holdSecTimer) clearInterval(holdSecTimer)
+    holdSecTimer = setInterval(function () {
+      holdSec.value = Math.floor((nowMs() - holdStartTs) / 1000)
+    }, 500)
   } catch (e) {
     micFail.value = true
     lastAction = { type: 'replay' }
@@ -286,6 +319,7 @@ function holdStart() {
 function holdEnd() {
   if (!holdActive.value) return
   holdActive.value = false
+  if (holdSecTimer) { clearInterval(holdSecTimer); holdSecTimer = null }
   beepOff()
   var held = nowMs() - holdStartTs
   if (held < HOLD_MIN_MS) {
@@ -396,7 +430,7 @@ function handleRoundResponse(resp) {
   stopHintRotation() // 修复：下一问到达即停轮播，防残留
   var meta = resp.meta || resp
   var blob = resp.blob
-  if (meta.stage) stageNow.value = meta.stage
+  if (meta.stage) stageNow.value = Math.max(stageNow.value, meta.stage)
   if (meta.finished) {
     finishedAttempted = true
     stopHintRotation()
