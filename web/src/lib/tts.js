@@ -126,22 +126,26 @@ export class TtsPlayer {
     return new Promise(function (resolve, reject) {
       self._ensureAudio()
       self._teardownWatchdog()
-      self._teardownCurrentUrl()
       self._setSrcAndPlay(url, resolve, reject)
     })
   }
 
   _teardownCurrentUrl() {
-    if (this.currentUrl) {
-      URL.revokeObjectURL(this.currentUrl)
-      this.currentUrl = null
-    }
+    // 旧 URL 的回收移到 finish/fail 中按需执行（iOS: 提前 revoke 会引发加载中断）
   }
 
   _setSrcAndPlay(url, resolve, reject) {
     var self = this
     var el = self.audio
     var done = false
+    var oldUrl = self.currentUrl
+
+    function releaseOld() {
+      if (oldUrl && oldUrl.indexOf('blob:') === 0) {
+        try { URL.revokeObjectURL(oldUrl) } catch (e) {}
+      }
+      self.currentUrl = null
+    }
     function cleanup() {
       el.removeEventListener('ended', finish)
       el.removeEventListener('error', fail)
@@ -151,6 +155,7 @@ export class TtsPlayer {
       done = true
       self._teardownWatchdog()
       cleanup()
+      releaseOld()
       resolve()
     }
     function fail() {
@@ -158,16 +163,16 @@ export class TtsPlayer {
       done = true
       self._teardownWatchdog()
       cleanup()
+      releaseOld()
       reject(new TtsPlayError())
     }
     el.addEventListener('ended', finish)
     el.addEventListener('error', fail)
+    // iOS 看门狗：8 秒仍停在 0 秒才判卡死（给慢网络缓冲留足时间）
     var startedAt = Date.now()
     var watch = setInterval(function () {
       try {
-        var elapsed = Date.now() - startedAt
-        if (elapsed > 3000 && el.currentTime === 0) {
-          // 卡死看门狗（评审 F-R7）：3s 后仍停在 0 秒判定播放失败
+        if (Date.now() - startedAt > 8000 && el.currentTime === 0) {
           fail()
           return
         }
@@ -175,22 +180,28 @@ export class TtsPlayer {
       } catch (e) {}
     }, 500)
     self._watchdog = watch
+    // iOS 加固：先 pause 再换 src；不调 load()（会与 play() 竞态中断）
+    try { el.pause() } catch (e) {}
     el.src = url
     self.currentUrl = url
-    el.load()
-    var p = el.play()
-    if (p && p.catch) {
-      p.catch(function () {
-        if (done) return
-        // 自动重试一次播放（解锁后重试通常成功）——用户要求"自动发声"
-        try {
-          var p2 = el.play()
-          if (p2 && p2.catch) p2.catch(function () { fail() })
-        } catch (e2) {
-          fail()
-        }
-      })
+    var attempts = 0
+    function tryPlay() {
+      if (done) return
+      attempts += 1
+      var pr = el.play()
+      if (pr && pr.catch) {
+        pr.catch(function () {
+          if (done) return
+          // iOS 常见 AbortError：分级延迟重试（150ms/400ms），仍失败才报错
+          if (attempts < 3) {
+            setTimeout(tryPlay, attempts * 200)
+          } else {
+            fail()
+          }
+        })
+      }
     }
+    tryPlay()
   }
 
   _teardownWatchdog() {
