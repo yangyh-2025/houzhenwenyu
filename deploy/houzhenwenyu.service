@@ -1,0 +1,23 @@
+# systemd 服务单元
+# 放置: /etc/systemd/system/houzhenwenyu.service
+[Unit]
+Description=候诊闻语诊前语音问诊系统
+After=network.target
+
+[Service]
+Type=simple
+User=hwyapp
+Group=hwyapp
+WorkingDirectory=/opt/houzhenwenyu/server
+EnvironmentFile=/opt/houzhenwenyu/.env
+ExecStart=/opt/houzhenwenyu/venv/bin/python run.py
+Restart=always
+RestartSec=3
+# 优雅停机预算需大于 uvicorn 默认 graceful 超时（R1 准则）
+TimeoutStopSec=15
+# 资源限制
+MemoryMax=512M
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
