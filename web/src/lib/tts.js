@@ -240,8 +240,9 @@ var _beepEl = null
 function _playBeepFile(url) {
   try {
     if (!_beepEl) _beepEl = new Audio()
-    _beepEl.src = url
-    _beepEl.play().catch(function () {})
+    _beepEl.src = cachedUrl(url) || url
+    var pr = _beepEl.play()
+    if (pr && pr.catch) pr.catch(function () {})
   } catch (e) {}
 }
 
@@ -259,10 +260,10 @@ var _quickEl = null
 var _seqEl = null
 
 export function speakUrl(url) {
-  // 单条即时播报（打断上一次）
+  // 单条即时播报（优先预缓存，零延迟）
   try {
     if (!_quickEl) _quickEl = new Audio()
-    _quickEl.src = url
+    _quickEl.src = cachedUrl(url) || url
     var pr = _quickEl.play()
     if (pr && pr.catch) pr.catch(function () {})
   } catch (e) {}
@@ -287,4 +288,34 @@ export function speakUrls(urls) {
       next()
     } catch (e) { resolve() }
   })
+}
+
+
+// ===== 音频预加载缓存（2026-08-25）：页面初始化时全部取好，按键/提示音零延迟 =====
+var _audioCache = {}  // url -> blobURL
+
+export var PRELOAD_URLS = [
+  '/tts/beep_on.wav', '/tts/beep_off.wav',
+  '/tts/NUM_0.mp3', '/tts/NUM_1.mp3', '/tts/NUM_2.mp3', '/tts/NUM_3.mp3',
+  '/tts/NUM_4.mp3', '/tts/NUM_5.mp3', '/tts/NUM_6.mp3', '/tts/NUM_7.mp3',
+  '/tts/NUM_8.mp3', '/tts/NUM_9.mp3',
+  '/tts/CONFIRM_PREFIX.mp3',
+  '/tts/OPENING.mp3', '/tts/FIRST_QUESTION.mp3', '/tts/CLOSING.mp3',
+  '/tts/REMINDER_SILENT.mp3', '/tts/ASK_CONTINUE.mp3',
+]
+
+export function preloadAudio(urls) {
+  ;(urls || PRELOAD_URLS).forEach(function (u) {
+    if (_audioCache[u]) return
+    fetch(u)
+      .then(function (r) { return r.ok ? r.blob() : null })
+      .then(function (b) {
+        if (b) _audioCache[u] = URL.createObjectURL(b)
+      })
+      .catch(function () {})
+  })
+}
+
+function cachedUrl(u) {
+  return _audioCache[u] || null
 }

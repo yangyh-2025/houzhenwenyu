@@ -105,6 +105,7 @@ var autoStopHint = ref(false)
 // 2026-08-24 四项体验：进度 / 按住说话 / 等待暖话术
 var stageNow = ref(0)
 var STAGE_TOTAL = 8
+var FIXED_FIRST_Q = "请问您主要是哪里不舒服呀？是怎么开始的，到现在大概多久了？"
 var holdActive = ref(false)
 var holdHint = ref('')
 var holdStartTs = 0
@@ -209,25 +210,10 @@ function onIntroAck() {
   uploadHint.value = PROCESSING_PHRASES[0]
   startHintRotation()
   var sid = consultSession.sessionId
-  // 首问静态优先（瞬时，2026-08-24 v2.3）：/tts/FIRST_QUESTION.mp3
-  tts.playStatic('FIRST_QUESTION').then(function (ok) {
-    stopHintRotation()
-    if (ok) {
-      stageNow.value = 1
-      playQuestion({ text: '', blob: null, staticKey: 'FIRST_QUESTION' })
-      return
-    }
-    binaryAudioRequest('/api/patient/consultations/' + sid + '/ask', {})
-      .then(function (r) {
-        stopHintRotation()
-        if (r.meta && r.meta.stage) stageNow.value = r.meta.stage
-        playQuestion({ text: (r.meta && r.meta.text) || '', blob: r.blob })
-      }, function () {
-        stopHintRotation()
-        showError('问题没有出来', '请点下面的按钮再试一次')
-        lastAction = { type: 'replay' }
-      })
-  })
+  // 首问静态优先 + 立即进入 playing（按钮即时可用可抢答，2026-08-25）
+  stopHintRotation()
+  stageNow.value = 1
+  playQuestion({ text: FIXED_FIRST_Q, staticKey: 'FIRST_QUESTION' })
 }
 
 function replayIntro() {
@@ -243,6 +229,27 @@ function replayIntro() {
 }
 
 function playQuestion(q, isClosing) {
+  // 静态首问：立即显示文字并播放（按钮同屏，可随时按住抢答）
+  if (q && q.staticKey) {
+    currentQuestion = q
+    questionText.value = q.text || FIXED_FIRST_Q
+    state.value = 'playing'
+    return tts.playStatic(q.staticKey).then(function (ok) {
+      if (ok) {
+        enterListening()
+        return
+      }
+      // 静态缺失 → 动态接口兜底
+      binaryAudioRequest('/api/patient/consultations/' + consultSession.sessionId + '/ask', {})
+        .then(function (r) {
+          playQuestion({ text: (r.meta && r.meta.text) || '', blob: r.blob })
+        }, function () {
+          enterListening()
+        })
+    }, function () {
+      enterListening()
+    })
+  }
   // 静态优先：结束语走 /tts/CLOSING.mp3（文字同步）
   if (isClosing) {
     return tts.playStatic('CLOSING').then(function (ok) {
