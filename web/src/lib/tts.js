@@ -299,7 +299,7 @@ export var PRELOAD_URLS = [
   '/tts/NUM_0.mp3', '/tts/NUM_1.mp3', '/tts/NUM_2.mp3', '/tts/NUM_3.mp3',
   '/tts/NUM_4.mp3', '/tts/NUM_5.mp3', '/tts/NUM_6.mp3', '/tts/NUM_7.mp3',
   '/tts/NUM_8.mp3', '/tts/NUM_9.mp3',
-  '/tts/CONFIRM_PREFIX.mp3',
+  '/tts/CONFIRM_PREFIX.mp3', '/tts/DEL_KEY.mp3', '/tts/CLEAR_KEY.mp3',
   '/tts/OPENING.mp3', '/tts/FIRST_QUESTION.mp3', '/tts/CLOSING.mp3',
   '/tts/REMINDER_SILENT.mp3', '/tts/ASK_CONTINUE.mp3',
 ]

@@ -22,7 +22,10 @@ from app.services.fixed_phrases import PHRASES  # noqa: E402
 _CN_DIGITS = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 EXTRA_PHRASES = {
     "CONFIRM_PREFIX": "请核对您的就诊号，您的就诊号是",
-    **{f"NUM_{d}": _CN_DIGITS[d] for d in range(10)},
+    "DEL_KEY": "删除",
+    "CLEAR_KEY": "清空",
+    # 0/8 单字加句号给自然语调（其余数字正常）
+    **{f"NUM_{d}": _CN_DIGITS[d] + ("。" if d in (0, 8) else "") for d in range(10)},
 }
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "web", "public", "tts")

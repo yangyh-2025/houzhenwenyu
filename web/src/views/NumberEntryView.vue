@@ -112,10 +112,12 @@ function onKey(k) {
   }
   if (k === '删除') {
     digits.value = digits.value.slice(0, -1)
+    speakUrl('/tts/DEL_KEY.mp3')
     return
   }
   if (k === '清空') {
     digits.value = ''
+    speakUrl('/tts/CLEAR_KEY.mp3')
     return
   }
   if (digits.value.length >= MAX_LEN) {
