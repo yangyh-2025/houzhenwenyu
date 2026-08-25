@@ -69,16 +69,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import NumberPad from '@/components/NumberPad.vue'
 import { request, ApiError, binaryAudioRequest } from '@/api/api.js'
-import { tts, speakUrl, speakUrls } from '@/lib/tts.js'
+import { tts, speakUrl, speakUrls, stopAll } from '@/lib/tts.js'
 import { recorder } from '@/lib/recorder.js'
 import { needsSafariGuide as detectedNeedsSafariGuide } from '@/lib/env.js'
 import { setConsultation } from '@/store/session.js'
 
 var router = useRouter()
+
+// 离开本页（进入问诊/返回）→ 切断核对播报与按键音（2026-08-25 用户反馈）
+onBeforeUnmount(function () {
+  stopAll()
+})
 var mode = ref('entry')
 var digits = ref('')
 var hint = ref('')

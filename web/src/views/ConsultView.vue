@@ -89,7 +89,7 @@ import { useRouter } from 'vue-router'
 import StatusBanner from '@/components/StatusBanner.vue'
 import { request, binaryAudioRequest } from '@/api/api.js'
 import { consultSession, resetConsultation } from '@/store/session.js'
-import { tts, beepOn, beepOff } from '@/lib/tts.js'
+import { tts, beepOn, beepOff, stopAll } from '@/lib/tts.js'
 import { recorder } from '@/lib/recorder.js'
 
 var router = useRouter()
@@ -619,7 +619,7 @@ function cleanupAll() {
   clearStagedTimers()
   stopHintRotation()
   try { recorder.cleanup() } catch (e) {}
-  try { tts.stop() } catch (e) {}
+  try { stopAll() } catch (e) {}
 }
 </script>
 

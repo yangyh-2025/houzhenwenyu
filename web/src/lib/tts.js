@@ -319,3 +319,11 @@ export function preloadAudio(urls) {
 function cachedUrl(u) {
   return _audioCache[u] || null
 }
+
+
+// ===== 跨页音频管理：路由切换/页面卸载时切断一切声音 =====
+export function stopAll() {
+  try { if (typeof tts !== 'undefined' && tts) tts.stop() } catch (e) {}
+  try { if (_quickEl) { _quickEl.pause(); _quickEl.src = '' } } catch (e) {}
+  try { if (_seqEl) { _seqEl.pause(); _seqEl.src = '' } } catch (e) {}
+}
