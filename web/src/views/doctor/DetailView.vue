@@ -14,18 +14,18 @@
       </p>
     </div>
 
-    <!-- 八栏目摘要 + 辨证参考（医生专用，2026-08-24）-->
+    <!-- 辨证参考置顶（2026-08-25：患者序号下方、主诉之前，医生一眼先看）-->
+    <div v-if="tcmField" class="field-block card field-tcm">
+      <p class="field-label">{{ tcmField.label }}（AI 生成 · 仅供医生参考）</p>
+      <p class="field-content">{{ tcmField.content }}</p>
+    </div>
+
+    <!-- 八栏目摘要 -->
     <div v-if="fields.length" class="fields">
-      <template v-for="f in fields" :key="f.label">
-        <div v-if="f.label.indexOf('辨证') >= 0" class="field-block card field-tcm">
-          <p class="field-label">{{ f.label }}（AI 生成 · 仅供医生参考）</p>
-          <p class="field-content">{{ f.content }}</p>
-        </div>
-        <div v-else class="field-block card">
-          <p class="field-label">{{ f.label }}</p>
-          <p class="field-content">{{ f.content }}</p>
-        </div>
-      </template>
+      <div v-for="f in fields" :key="f.label" class="field-block card">
+        <p class="field-label">{{ f.label }}</p>
+        <p class="field-content">{{ f.content }}</p>
+      </div>
     </div>
     <pre v-else-if="detail.summary_text" class="raw-summary card">{{ detail.summary_text }}</pre>
     <p v-else class="empty">暂无摘要内容</p>
@@ -46,8 +46,7 @@ var DEFAULT_DISCLAIMER = '本摘要由AI整理，仅供面诊参考，请以面�
 var detail = ref({})
 var loadError = ref('')
 
-var fields = computed(function () {
-  var text = detail.value.summary_text || ''
+function _parseBlocks(text) {
   var re = /【([^】]+)】([^【]*)/g
   var out = []
   var seen = {}
@@ -64,6 +63,21 @@ var fields = computed(function () {
     m = re.exec(text)
   }
   return out
+}
+
+// 辨证参考单独提取（置顶展示）
+var tcmField = computed(function () {
+  var blocks = _parseBlocks(detail.value.summary_text || '')
+  for (var i = 0; i < blocks.length; i++) {
+    if (blocks[i].label.indexOf('辨证') >= 0) return blocks[i]
+  }
+  return null
+})
+
+var fields = computed(function () {
+  return _parseBlocks(detail.value.summary_text || '').filter(function (f) {
+    return f.label.indexOf('辨证') < 0
+  })
 })
 
 onMounted(function () {
