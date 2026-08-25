@@ -52,7 +52,7 @@
         @mousedown.prevent="holdStart"
         @mouseup.prevent="holdEnd"
         @mouseleave="holdActive && holdEnd()"
-      >{{ holdActive ? '松开 结束回答' : '按住 说话（可打断播报）' }}</button>
+      >{{ holdActive ? '松开 结束回答' : '按住 说话' }}</button>
       <p v-if="holdHint" class="hint-bar warn" role="alert">{{ holdHint }}</p>
       <button v-if="state === 'listening'" type="button" class="btn-mid plain" @click="replayQuestion">再听一遍</button>
     </div>

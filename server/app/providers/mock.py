@@ -101,7 +101,7 @@ class ScriptedMockProvider(BaseProvider):
             return _tag(step) + SCRIPT[step]
         return "好的，您的情况我了解得差不多了。" + MARKER + SUMMARY_TEMPLATE
 
-    async def synthesize(self, text: str) -> bytes:
+    async def synthesize(self, text: str, style: str = None) -> bytes:
         # 预览占位：提示音（无 Key 可感知链路；真实 MiMo 为真人声）
         return build_test_wav(1.0)
 

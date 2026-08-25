@@ -22,7 +22,7 @@ class BaseProvider(ABC):
         return ""
 
     @abstractmethod
-    async def synthesize(self, text: str) -> bytes:
+    async def synthesize(self, text: str, style: str = None) -> bytes:
         ...
 
     async def aclose(self) -> None:

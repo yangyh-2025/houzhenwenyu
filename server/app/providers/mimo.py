@@ -84,11 +84,12 @@ class MiMoProvider(BaseProvider):
             raise AppError("AI_PROVIDER_ERROR")
         return str(content)
 
-    async def synthesize(self, text: str) -> bytes:
+    async def synthesize(self, text: str, style: str = None) -> bytes:
         payload = {
             "model": self._cfg.ai_tts_model,
             "messages": [
-                {"role": "user", "content": _TTS_STYLE_INSTRUCTION},
+                {"role": "user",
+                 "content": style or _TTS_STYLE_INSTRUCTION},
                 {"role": "assistant", "content": text},
             ],
             "audio": {"format": self._cfg.ai_tts_format,

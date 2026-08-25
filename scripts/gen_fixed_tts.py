@@ -18,9 +18,12 @@ from app.core.config import Settings, get_settings  # noqa: E402
 from app.services.fixed_phrases import PHRASES  # noqa: E402
 
 # 按键与确认播报语音（2026-08-24）：数字0-9 + 核对引导语
+# 数字用中文汉字（阿拉伯数字会被读成英文）；统一昂扬语气
+_CN_DIGITS = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+DIGIT_STYLE = "语气昂扬、声音明亮、吐字清晰，像叫号报号一样响亮利落"
 EXTRA_PHRASES = {
     "CONFIRM_PREFIX": "请核对您的就诊号，您的就诊号是",
-    **{f"NUM_{d}": str(d) for d in range(10)},
+    **{f"NUM_{d}": _CN_DIGITS[d] for d in range(10)},
 }
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "web", "public", "tts")
@@ -43,7 +46,10 @@ def main() -> int:
     async def run():
         n = 0
         for key, text in list(PHRASES.items()) + list(EXTRA_PHRASES.items()):
-            raw = await provider.synthesize(text)
+            if key.startswith("NUM_"):
+                raw = await provider.synthesize(text, style=DIGIT_STYLE)
+            else:
+                raw = await provider.synthesize(text)
             path = os.path.join(OUT, f"{key}.{ext}")
             with open(path, "wb") as f:
                 f.write(raw)
