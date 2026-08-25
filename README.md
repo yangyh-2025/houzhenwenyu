@@ -8,7 +8,7 @@
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white)
-![License](https://img.shields.io/badge/License-PolyForm%20NC%201.0-blue)
+![License](https://img.shields.io/badge/License-PolyForm%20NC%201.0.0-blue)
 
 ## ✨ 核心特性
 
