@@ -8,6 +8,7 @@
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/License-NonCommercial-red)
 
 ## ✨ 核心特性
 
@@ -75,6 +76,12 @@ cd server && python -m pytest tests -q   # 62 项单元+集成测试
 本系统输出的全部内容（包括摘要与辨证参考）均由 AI 生成，**不构成医疗诊断、治疗建议或处方**；
 临床决策责任完全在于执业医师。患者端不展示任何诊断性内容。
 
-## License
+## 📄 License（非商业许可）
 
-未设置开源许可证（保留所有权利）。如需集成或复用，请通过仓库 Issues 联系。
+本项目采用**自定义非商业许可**：
+
+- ✅ **个人学习、研究、教学、公益非经营性使用**：免费使用、修改、分发
+- ⛔ **任何商业用途**（销售/收费服务/企业经营性部署/嵌入商业产品）：**须事先获得书面授权**
+- ⛔ **修改版商用**：同样必须获得书面授权，且再分发须沿用本许可
+
+商业授权请联系：**yangyuhang2667@163.com** ｜ 完整条款见 [LICENSE](LICENSE)

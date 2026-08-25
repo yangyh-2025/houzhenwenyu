@@ -1,0 +1,78 @@
+候诊闻语 · 源码许可协议
+（非商业使用许可 · 商业使用需授权）
+Copyright (c) 2025 yangyh-2025 <yangyuhang2667@163.com>
+
+一、许可授予
+在遵守本协议全部条款的前提下，版权人授予您免费、非独占的许可：
+1. 个人学习、研究、教学用途：使用、复制、修改、分发本软件及其源代码；
+2. 非商业目的的使用（包括公益医疗机构内部非经营性使用）：同上。
+
+二、商业使用限制（核心条款）
+任何以商业为目的的下列行为，均须事先获得版权人书面授权，否则构成侵权：
+1. 直接或间接以营利/经营为目的使用本软件或其任何部分；
+2. 将本软件（整体或部分）嵌入、集成到商业产品或经营性系统中；
+3. 基于本软件提供服务并收取费用，或将其用于商业性对外运营；
+4. 企业、机构在经营活动中内部部署使用。
+
+三、修改版的义务
+1. 修改后的版本（衍生作品）再分发时，必须同样采用本协议并向接收方明示；
+2. 修改后的版本用于任何商业用途，同样必须事先获得版权人书面授权；
+3. 不得移除或修改本协议文本及版权声明。
+
+四、权利保留
+除本协议明示授予的权利外，版权人保留一切权利。
+
+五、商业授权联系
+商业使用授权、合作洽谈请联系：
+邮箱：yangyuhang2667@163.com
+
+六、免责声明
+本软件按"现状"提供，不附带任何明示或默示的担保（包括但不限于适销性与
+特定用途适用性）。在任何情况下，版权人均不对因使用本软件而产生的任何
+索赔、损害或其他责任负责。
+
+七、医疗免责
+本软件为诊前信息采集辅助工具，其全部输出（包括摘要与辨证参考）均由 AI
+生成，不构成医疗诊断、治疗建议或处方；临床决策责任完全在于执业医师。
+
+---
+
+HOUZHENWENYU SOURCE LICENSE
+(Noncommercial Use · Commercial Use Requires Authorization)
+Copyright (c) 2025 yangyh-2025 <yangyuhang2667@163.com>
+
+1. Grant. Subject to full compliance with this agreement, the copyright
+   holder grants a free, non-exclusive license to use, copy, modify and
+   distribute the software and its source code for personal study,
+   research, teaching and other noncommercial purposes.
+
+2. Commercial Restriction (Core Term). Any of the following for
+   commercial purposes requires prior written authorization from the
+   copyright holder:
+   (a) using the software or any part of it, directly or indirectly, for
+       profit or business operations;
+   (b) embedding or integrating the software (in whole or in part) into
+       commercial products or business systems;
+   (c) providing paid services based on the software, or operating it
+       commercially for external users;
+   (d) internal deployment by enterprises or institutions in the course
+       of business.
+
+3. Modified Versions. (1) Redistribution of modified versions must remain
+   under this same license with notice to recipients; (2) any commercial
+   use of modified versions likewise requires prior written authorization;
+   (3) this license text and copyright notice must not be removed.
+
+4. Reservation of Rights. All rights not expressly granted are reserved.
+
+5. Commercial Licensing Contact: yangyuhang2667@163.com
+
+6. Disclaimer of Warranty. THE SOFTWARE IS PROVIDED "AS IS" WITHOUT
+   WARRANTY OF ANY KIND. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE
+   FOR ANY CLAIM OR DAMAGES ARISING FROM THE USE OF THE SOFTWARE.
+
+7. Medical Disclaimer. This software is a pre-visit information collection
+   aid. All output (including summaries and TCM references) is AI-generated
+   and does not constitute medical diagnosis, treatment advice or
+   prescriptions; clinical responsibility rests entirely with licensed
+   physicians.
